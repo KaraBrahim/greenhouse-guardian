@@ -3,6 +3,8 @@ import { SensorCard } from '@/components/SensorCard';
 import { AlertsPanel } from '@/components/AlertsPanel';
 import { SystemStatus } from '@/components/SystemStatus';
 import { TrendChart } from '@/components/TrendChart';
+import { SensorDataTable } from '@/components/SensorDataTable';
+import { LogsPanel } from '@/components/LogsPanel';
 import { 
   Thermometer, 
   Droplets, 
@@ -10,11 +12,25 @@ import {
   Leaf, 
   Activity, 
   AlertTriangle,
-  Waves
 } from 'lucide-react';
+import { useEffect } from 'react';
+import { logInfo, logSuccess } from '@/types/logs';
 
 export default function Dashboard() {
   const { sensorData, isConnected, connectionStatus, dataHistory } = useWebSocket();
+
+  useEffect(() => {
+    logInfo('ui', 'Dashboard page loaded');
+    return () => {
+      logInfo('ui', 'Dashboard page unloaded');
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isConnected) {
+      logSuccess('ui', 'Dashboard connected to live data stream');
+    }
+  }, [isConnected]);
 
   const getStatusType = (status: string): 'good' | 'warning' | 'danger' | 'info' => {
     switch (status) {
@@ -201,6 +217,16 @@ export default function Dashboard() {
           <div>
             <AlertsPanel alerts={sensorData.alerts} />
           </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="mb-8">
+          <SensorDataTable dataHistory={dataHistory} />
+        </div>
+
+        {/* Logs Panel */}
+        <div>
+          <LogsPanel />
         </div>
       </div>
     </div>
