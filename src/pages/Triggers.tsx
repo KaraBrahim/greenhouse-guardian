@@ -1,0 +1,347 @@
+import { useState } from 'react';
+import { 
+  Zap, 
+  Plus, 
+  Trash2, 
+  Power, 
+  PowerOff,
+  Mail,
+  Bell,
+  Webhook,
+  DoorOpen,
+  Fan,
+  Droplets,
+  Thermometer,
+  Wind,
+  Activity,
+  AlertTriangle,
+  Leaf,
+  Save,
+  X
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
+import { Trigger, TriggerAction } from '@/types/sensor';
+
+const defaultTriggers: Trigger[] = [
+  {
+    id: '1',
+    name: 'High Temperature Alert',
+    condition: { sensor: 'temp', operator: '>', value: 35 },
+    actions: [
+      { type: 'notification', config: { title: 'Temperature Warning', message: 'Greenhouse temperature exceeds 35°C' } },
+      { type: 'device_control', config: { device: 'ventilation_fan', action: 'turn_on' } },
+    ],
+    enabled: true,
+  },
+  {
+    id: '2',
+    name: 'Low Humidity Watering',
+    condition: { sensor: 'hum', operator: '<', value: 40 },
+    actions: [
+      { type: 'notification', config: { title: 'Low Humidity', message: 'Humidity below 40%' } },
+      { type: 'device_control', config: { device: 'sprinkler_system', action: 'activate' } },
+    ],
+    enabled: true,
+  },
+  {
+    id: '3',
+    name: 'Gas Leak Emergency',
+    condition: { sensor: 'gas', operator: '>', value: 500 },
+    actions: [
+      { type: 'alert', config: { severity: 'critical', message: 'Gas leak detected!' } },
+      { type: 'email', config: { recipient: 'admin@greenhouse.com', subject: 'EMERGENCY: Gas Leak' } },
+      { type: 'device_control', config: { device: 'emergency_ventilation', action: 'turn_on' } },
+      { type: 'device_control', config: { device: 'all_doors', action: 'unlock' } },
+    ],
+    enabled: true,
+  },
+  {
+    id: '4',
+    name: 'Motion Detection Security',
+    condition: { sensor: 'motion', operator: '=', value: 1 },
+    actions: [
+      { type: 'notification', config: { title: 'Motion Detected', message: 'Movement detected in greenhouse' } },
+      { type: 'webhook', config: { url: 'https://api.security.com/alert', method: 'POST' } },
+    ],
+    enabled: false,
+  },
+  {
+    id: '5',
+    name: 'Dry Soil Warning',
+    condition: { sensor: 'water', operator: '<', value: 30 },
+    actions: [
+      { type: 'notification', config: { title: 'Soil Dry', message: 'Soil moisture critically low' } },
+      { type: 'email', config: { recipient: 'gardener@greenhouse.com', subject: 'Watering Required' } },
+    ],
+    enabled: true,
+  },
+  {
+    id: '6',
+    name: 'Frost Protection',
+    condition: { sensor: 'temp', operator: '<', value: 5 },
+    actions: [
+      { type: 'alert', config: { severity: 'warning', message: 'Frost warning!' } },
+      { type: 'device_control', config: { device: 'heating_system', action: 'turn_on' } },
+      { type: 'device_control', config: { device: 'frost_blankets', action: 'deploy' } },
+    ],
+    enabled: true,
+  },
+];
+
+const sensorIcons: Record<string, React.ReactNode> = {
+  temp: <Thermometer className="w-4 h-4" />,
+  hum: <Droplets className="w-4 h-4" />,
+  gas: <Wind className="w-4 h-4" />,
+  water: <Leaf className="w-4 h-4" />,
+  motion: <Activity className="w-4 h-4" />,
+  gasAlarm: <AlertTriangle className="w-4 h-4" />,
+};
+
+const sensorColors: Record<string, string> = {
+  temp: 'hsl(15, 90%, 55%)',
+  hum: 'hsl(199, 89%, 48%)',
+  gas: 'hsl(270, 70%, 60%)',
+  water: 'hsl(142, 76%, 45%)',
+  motion: 'hsl(38, 92%, 50%)',
+  gasAlarm: 'hsl(0, 72%, 51%)',
+};
+
+const actionIcons: Record<string, React.ReactNode> = {
+  alert: <AlertTriangle className="w-4 h-4" />,
+  email: <Mail className="w-4 h-4" />,
+  notification: <Bell className="w-4 h-4" />,
+  webhook: <Webhook className="w-4 h-4" />,
+  device_control: <Zap className="w-4 h-4" />,
+};
+
+export default function Triggers() {
+  const [triggers, setTriggers] = useState<Trigger[]>(defaultTriggers);
+  const [showNewTrigger, setShowNewTrigger] = useState(false);
+
+  const toggleTrigger = (id: string) => {
+    setTriggers(prev =>
+      prev.map(t => (t.id === id ? { ...t, enabled: !t.enabled } : t))
+    );
+  };
+
+  const deleteTrigger = (id: string) => {
+    setTriggers(prev => prev.filter(t => t.id !== id));
+  };
+
+  const getOperatorLabel = (op: string) => {
+    switch (op) {
+      case '>': return 'greater than';
+      case '<': return 'less than';
+      case '=': return 'equals';
+      case '>=': return 'at least';
+      case '<=': return 'at most';
+      default: return op;
+    }
+  };
+
+  const getSensorLabel = (sensor: string) => {
+    switch (sensor) {
+      case 'temp': return 'Temperature';
+      case 'hum': return 'Humidity';
+      case 'gas': return 'Gas Level';
+      case 'water': return 'Soil Moisture';
+      case 'motion': return 'Motion';
+      case 'gasAlarm': return 'Gas Alarm';
+      default: return sensor;
+    }
+  };
+
+  const getActionLabel = (type: string) => {
+    switch (type) {
+      case 'alert': return 'Show Alert';
+      case 'email': return 'Send Email';
+      case 'notification': return 'Push Notification';
+      case 'webhook': return 'Call Webhook';
+      case 'device_control': return 'Control Device';
+      default: return type;
+    }
+  };
+
+  return (
+    <div className="min-h-screen pb-12">
+      <div className="container mx-auto px-4 py-8">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">
+              <span className="text-gradient">Automation Triggers</span>
+            </h2>
+            <p className="text-muted-foreground">
+              Configure automated responses to sensor conditions
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowNewTrigger(true)}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Trigger
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="glass rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Zap className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{triggers.length}</p>
+                <p className="text-sm text-muted-foreground">Total Triggers</p>
+              </div>
+            </div>
+          </div>
+          <div className="glass rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-success/10">
+                <Power className="w-6 h-6 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{triggers.filter(t => t.enabled).length}</p>
+                <p className="text-sm text-muted-foreground">Active</p>
+              </div>
+            </div>
+          </div>
+          <div className="glass rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-muted">
+                <PowerOff className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{triggers.filter(t => !t.enabled).length}</p>
+                <p className="text-sm text-muted-foreground">Inactive</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Triggers List */}
+        <div className="space-y-4">
+          {triggers.map((trigger, index) => (
+            <div
+              key={trigger.id}
+              className={cn(
+                'glass rounded-xl p-6 animate-fade-in transition-all duration-300',
+                trigger.enabled ? 'border-primary/30' : 'opacity-60'
+              )}
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  {/* Trigger Header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div 
+                      className="p-2 rounded-lg"
+                      style={{ 
+                        backgroundColor: `${sensorColors[trigger.condition.sensor]}20`,
+                        color: sensorColors[trigger.condition.sensor]
+                      }}
+                    >
+                      {sensorIcons[trigger.condition.sensor]}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{trigger.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        When <span className="text-foreground font-medium">{getSensorLabel(trigger.condition.sensor)}</span> is{' '}
+                        <span className="text-foreground font-medium">{getOperatorLabel(trigger.condition.operator)}</span>{' '}
+                        <span className="text-primary font-mono">{trigger.condition.value}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2">
+                    {trigger.actions.map((action, actionIndex) => (
+                      <div
+                        key={actionIndex}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 text-sm"
+                      >
+                        <span className="text-primary">{actionIcons[action.type]}</span>
+                        <span>{getActionLabel(action.type)}</span>
+                        {action.config.device && (
+                          <span className="text-muted-foreground">
+                            → {action.config.device.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={trigger.enabled}
+                    onCheckedChange={() => toggleTrigger(trigger.id)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteTrigger(trigger.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {triggers.length === 0 && (
+          <div className="glass rounded-xl p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No Triggers Configured</h3>
+            <p className="text-muted-foreground mb-6">
+              Create your first automation trigger to respond to sensor changes
+            </p>
+            <Button onClick={() => setShowNewTrigger(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Create Trigger
+            </Button>
+          </div>
+        )}
+
+        {/* Action Types Reference */}
+        <div className="mt-12">
+          <h3 className="text-lg font-semibold mb-4">Available Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { icon: <Bell />, title: 'Push Notification', desc: 'Send real-time notifications to your devices' },
+              { icon: <Mail />, title: 'Email Alert', desc: 'Send email notifications to specified recipients' },
+              { icon: <Webhook />, title: 'Webhook', desc: 'Call external APIs for custom integrations' },
+              { icon: <DoorOpen />, title: 'Door Control', desc: 'Open or close greenhouse doors and vents' },
+              { icon: <Fan />, title: 'Ventilation', desc: 'Control fans and ventilation systems' },
+              { icon: <Droplets />, title: 'Irrigation', desc: 'Activate sprinklers and watering systems' },
+            ].map((action, index) => (
+              <div
+                key={index}
+                className="glass rounded-xl p-5 flex items-start gap-4 animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  {action.icon}
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">{action.title}</h4>
+                  <p className="text-sm text-muted-foreground">{action.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
