@@ -17,7 +17,7 @@ import { useEffect } from 'react';
 import { logInfo, logSuccess } from '@/types/logs';
 
 export default function Dashboard() {
-  const { sensorData, isConnected, connectionStatus, dataHistory } = useWebSocket();
+  const { sensorData, isConnected, connectionStatus, dataHistory, isLoadingHistory } = useWebSocket();
 
   useEffect(() => {
     logInfo('ui', 'Dashboard page loaded');
@@ -25,6 +25,12 @@ export default function Dashboard() {
       logInfo('ui', 'Dashboard page unloaded');
     };
   }, []);
+
+  useEffect(() => {
+    if (isLoadingHistory) {
+      logInfo('ui', 'Loading historical sensor data...');
+    }
+  }, [isLoadingHistory]);
 
   useEffect(() => {
     if (isConnected) {
@@ -115,6 +121,8 @@ export default function Dashboard() {
             sensorData={sensorData} 
             isConnected={isConnected}
             connectionStatus={connectionStatus}
+            isLoadingHistory={isLoadingHistory}
+            historyCount={dataHistory.length}
           />
         </div>
 

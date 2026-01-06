@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Database, Clock } from 'lucide-react';
+import { Database, Clock, Radio, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SensorDataTableProps {
@@ -72,6 +72,9 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
           <Table>
             <TableHeader className="sticky top-0 bg-background/95 backdrop-blur z-10">
               <TableRow className="border-border/50 hover:bg-transparent">
+                <TableHead className="w-[40px]">
+                  <span className="sr-only">Source</span>
+                </TableHead>
                 <TableHead className="w-[100px]">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -90,7 +93,7 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
             <TableBody>
               {reversedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Waiting for sensor data...
                   </TableCell>
                 </TableRow>
@@ -100,9 +103,18 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                     key={`${data.timestamp}-${index}`}
                     className={cn(
                       "border-border/30 transition-colors",
-                      index === 0 && "bg-primary/5"
+                      index === 0 && data._source === 'realtime' && "bg-primary/5 animate-pulse"
                     )}
                   >
+                    <TableCell className="text-center">
+                      <span title={data._source === 'realtime' ? 'Realtime' : 'Historical'}>
+                        {data._source === 'realtime' ? (
+                          <Radio className="w-3 h-3 text-green-400" />
+                        ) : (
+                          <History className="w-3 h-3 text-muted-foreground" />
+                        )}
+                      </span>
+                    </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {formatTime(data.timestamp)}
                     </TableCell>
