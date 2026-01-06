@@ -7,16 +7,17 @@ export interface SensorData {
   water: number;
   motion: number;
   gasAlarm: number;
-  temp_status: 'cold' | 'normal' | 'warm' | 'hot';
-  hum_status: 'dry' | 'normal' | 'humid';
+  temp_status: 'cold' | 'normal' | 'warm' | 'hot' | 'optimal';
+  hum_status: 'dry' | 'normal' | 'humid' | 'comfortable';
   air_quality: 'good' | 'moderate' | 'poor' | 'hazardous';
   soil_status: 'dry' | 'moist' | 'wet';
   motion_status: 'none' | 'detected';
-  gas_alarm_status: 'clear' | 'warning' | 'danger';
+  gas_alarm_status: 'clear' | 'warning' | 'danger' | 'active';
   alerts: Alert[];
   system_health: 'good' | 'attention' | 'critical';
-  data_freshness: 'realtime' | 'delayed' | 'stale';
-  temp_trend: 'rising' | 'stable' | 'falling';
+  data_freshness?: 'realtime' | 'delayed' | 'stale';
+  temp_trend?: 'rising' | 'stable' | 'falling';
+  _source?: 'historical' | 'realtime'; // Track data source
 }
 
 export interface Alert {

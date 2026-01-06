@@ -1,14 +1,16 @@
 import { SensorData } from '@/types/sensor';
-import { Activity, Wifi, WifiOff, Clock, Server } from 'lucide-react';
+import { Activity, Wifi, WifiOff, Clock, Server, Database, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SystemStatusProps {
   sensorData: SensorData;
   isConnected: boolean;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  isLoadingHistory?: boolean;
+  historyCount?: number;
 }
 
-export function SystemStatus({ sensorData, isConnected, connectionStatus }: SystemStatusProps) {
+export function SystemStatus({ sensorData, isConnected, connectionStatus, isLoadingHistory, historyCount = 0 }: SystemStatusProps) {
   const getHealthColor = () => {
     switch (sensorData.system_health) {
       case 'good':
@@ -122,11 +124,22 @@ export function SystemStatus({ sensorData, isConnected, connectionStatus }: Syst
         </div>
       </div>
 
-      {/* Device ID */}
+      {/* Device ID and History */}
       <div className="mt-4 pt-4 border-t border-border/50">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-muted-foreground">Device ID</span>
           <span className="font-mono text-primary">{sensorData.device_id}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground flex items-center gap-2">
+            {isLoadingHistory ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Database className="w-3 h-3" />
+            )}
+            {isLoadingHistory ? 'Loading history...' : 'History Records'}
+          </span>
+          <span className="font-mono text-muted-foreground">{historyCount}</span>
         </div>
       </div>
     </div>
