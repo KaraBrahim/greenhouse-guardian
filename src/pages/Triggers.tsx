@@ -16,12 +16,20 @@ import {
   Activity,
   AlertTriangle,
   Save,
-  X
+  X,
+  Lightbulb,
+  Settings2,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Trigger, TriggerAction } from '@/types/sensor';
+import { toast } from 'sonner';
+
+const API_BASE = 'http://18.212.77.216:8000';
+const DEVICE_ID = 'esp32_device';
 
 const defaultTriggers: Trigger[] = [
   {
@@ -150,6 +158,82 @@ export default function Triggers() {
     }
   };
 
+  // Actuator control states
+  const [windowAngle, setWindowAngle] = useState(0);
+  const [valveAngle, setValveAngle] = useState(0);
+  const [ledState, setLedState] = useState<'off' | 'on' | 'blink_slow' | 'blink_fast'>('off');
+  const [loadingActuator, setLoadingActuator] = useState<string | null>(null);
+
+  const controlWindow = async (angle: number) => {
+    setLoadingActuator('window');
+    try {
+      const response = await fetch(`${API_BASE}/actuator/${DEVICE_ID}/window`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ angle })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success(`Window set to ${angle}°`);
+        console.log('✅ Window:', data);
+      } else {
+        throw new Error(data.detail || 'Failed to control window');
+      }
+    } catch (error) {
+      console.error('❌ Window error:', error);
+      toast.error('Failed to control window');
+    } finally {
+      setLoadingActuator(null);
+    }
+  };
+
+  const controlValve = async (angle: number) => {
+    setLoadingActuator('valve');
+    try {
+      const response = await fetch(`${API_BASE}/actuator/${DEVICE_ID}/valve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ angle })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success(`Valve set to ${angle}°`);
+        console.log('✅ Valve:', data);
+      } else {
+        throw new Error(data.detail || 'Failed to control valve');
+      }
+    } catch (error) {
+      console.error('❌ Valve error:', error);
+      toast.error('Failed to control valve');
+    } finally {
+      setLoadingActuator(null);
+    }
+  };
+
+  const controlLED = async (state: 'off' | 'on' | 'blink_slow' | 'blink_fast') => {
+    setLoadingActuator('led');
+    try {
+      const response = await fetch(`${API_BASE}/actuator/${DEVICE_ID}/led_warning`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state, color: 'red' })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setLedState(state);
+        toast.success(`LED ${state === 'off' ? 'turned off' : state === 'on' ? 'turned on' : state.replace('_', ' ')}`);
+        console.log('✅ LED:', data);
+      } else {
+        throw new Error(data.detail || 'Failed to control LED');
+      }
+    } catch (error) {
+      console.error('❌ LED error:', error);
+      toast.error('Failed to control LED');
+    } finally {
+      setLoadingActuator(null);
+    }
+  };
+
   return (
     <div className="min-h-screen pb-12">
       <div className="container mx-auto px-4 py-8">
@@ -157,10 +241,10 @@ export default function Triggers() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold mb-2">
-              <span className="text-gradient">Automation Triggers</span>
+              <span className="text-gradient">Automation & Controls</span>
             </h2>
             <p className="text-muted-foreground">
-              Configure automated responses to sensor conditions
+              Manual actuator controls and automated trigger responses
             </p>
           </div>
           <Button 
@@ -170,6 +254,187 @@ export default function Triggers() {
             <Plus className="w-4 h-4" />
             New Trigger
           </Button>
+        </div>
+
+        {/* Actuator Controls Section */}
+        <div className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings2 className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">Manual Actuator Controls</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Window Control */}
+            <div className="glass rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-lg bg-blue-500/10">
+                  <DoorOpen className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Window Servo</h4>
+                  <p className="text-sm text-muted-foreground">0° closed – 90° open</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Angle</span>
+                  <span className="font-mono text-lg font-bold text-blue-500">{windowAngle}°</span>
+                </div>
+                <Slider
+                  value={[windowAngle]}
+                  onValueChange={(v) => setWindowAngle(v[0])}
+                  max={180}
+                  step={5}
+                  className="w-full"
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => { setWindowAngle(0); controlWindow(0); }}
+                    disabled={loadingActuator === 'window'}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => { setWindowAngle(90); controlWindow(90); }}
+                    disabled={loadingActuator === 'window'}
+                  >
+                    Open
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => controlWindow(windowAngle)}
+                    disabled={loadingActuator === 'window'}
+                  >
+                    {loadingActuator === 'window' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Valve Control */}
+            <div className="glass rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-lg bg-cyan-500/10">
+                  <Droplets className="w-6 h-6 text-cyan-500" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Water Valve</h4>
+                  <p className="text-sm text-muted-foreground">0° closed – 90° open</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Angle</span>
+                  <span className="font-mono text-lg font-bold text-cyan-500">{valveAngle}°</span>
+                </div>
+                <Slider
+                  value={[valveAngle]}
+                  onValueChange={(v) => setValveAngle(v[0])}
+                  max={180}
+                  step={5}
+                  className="w-full"
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => { setValveAngle(0); controlValve(0); }}
+                    disabled={loadingActuator === 'valve'}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => { setValveAngle(90); controlValve(90); }}
+                    disabled={loadingActuator === 'valve'}
+                  >
+                    Open
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => controlValve(valveAngle)}
+                    disabled={loadingActuator === 'valve'}
+                  >
+                    {loadingActuator === 'valve' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* LED Control */}
+            <div className="glass rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={cn(
+                  "p-3 rounded-lg transition-colors",
+                  ledState === 'off' ? 'bg-muted' : 'bg-red-500/20'
+                )}>
+                  <Lightbulb className={cn(
+                    "w-6 h-6 transition-colors",
+                    ledState === 'off' ? 'text-muted-foreground' : 'text-red-500',
+                    (ledState === 'blink_slow' || ledState === 'blink_fast') && 'animate-pulse'
+                  )} />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Warning LED</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Status: <span className={cn(
+                      "font-medium",
+                      ledState === 'off' ? 'text-muted-foreground' : 'text-red-500'
+                    )}>{ledState.replace('_', ' ')}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant={ledState === 'off' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => controlLED('off')}
+                  disabled={loadingActuator === 'led'}
+                >
+                  {loadingActuator === 'led' && ledState !== 'off' ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                  Off
+                </Button>
+                <Button 
+                  variant={ledState === 'on' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => controlLED('on')}
+                  disabled={loadingActuator === 'led'}
+                  className={ledState === 'on' ? 'bg-red-500 hover:bg-red-600' : ''}
+                >
+                  On
+                </Button>
+                <Button 
+                  variant={ledState === 'blink_slow' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => controlLED('blink_slow')}
+                  disabled={loadingActuator === 'led'}
+                  className={ledState === 'blink_slow' ? 'bg-red-500 hover:bg-red-600' : ''}
+                >
+                  Slow Blink
+                </Button>
+                <Button 
+                  variant={ledState === 'blink_fast' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => controlLED('blink_fast')}
+                  disabled={loadingActuator === 'led'}
+                  className={ledState === 'blink_fast' ? 'bg-red-500 hover:bg-red-600' : ''}
+                >
+                  Fast Blink
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stats */}
