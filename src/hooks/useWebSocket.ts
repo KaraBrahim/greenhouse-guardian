@@ -3,7 +3,7 @@ import { SensorData, defaultSensorData } from '@/types/sensor';
 import { logInfo, logSuccess, logWarning, logError } from '@/types/logs';
 
 // Update this to your server IP/URL
-const WS_URL = 'ws://13.221.104.81:8000/ws/sensors/esp32_device';
+const WS_URL = 'ws://18.212.77.216:8000/ws/sensors/esp32_device';
 
 interface WebSocketMessage {
   type: 'historical' | 'realtime' | 'ping';
