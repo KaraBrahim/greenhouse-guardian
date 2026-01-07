@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { SensorData, defaultSensorData } from '@/types/sensor';
 import { logInfo, logSuccess, logWarning, logError } from '@/types/logs';
 
-// Update this to your new server IP/URL
+// Update this to your server IP/URL
 const WS_URL = 'ws://13.221.104.81:8000/ws/sensors/esp32_device';
 
 interface WebSocketMessage {
@@ -24,85 +24,115 @@ export function useWebSocket() {
   const historicalCountRef = useRef(0);
   const realtimeCountRef = useRef(0);
 
-  const processHistoricalData = useCallback((data: SensorData) => {
+  // Normalize backend data to ensure all required fields exist
+  const normalizeData = useCallback((data: Partial<SensorData>): SensorData => {
+    return {
+      ...defaultSensorData,
+      ...data,
+      // Ensure severity fields have defaults
+      temp_severity: data.temp_severity || 'normal',
+      hum_severity: data.hum_severity || 'normal',
+      air_severity: data.air_severity || 'normal',
+      motion_severity: data.motion_severity || 'normal',
+      gas_alarm_severity: data.gas_alarm_severity || 'normal',
+      // Ensure arrays exist
+      alerts: data.alerts || [],
+      recommendations: data.recommendations || [],
+      automated_actions: data.automated_actions || [],
+      // Ensure summary metrics exist
+      environment_score: data.environment_score ?? 0,
+      danger_count: data.danger_count ?? 0,
+      warning_count: data.warning_count ?? 0,
+      needs_attention: data.needs_attention ?? false,
+      health_color: data.health_color || 'gray',
+    };
+  }, []);
+
+  const processHistoricalData = useCallback((data: Partial<SensorData>) => {
     historicalCountRef.current++;
-    console.log(`[HISTORICAL] Record #${historicalCountRef.current}:`, data.timestamp);
+    const normalizedData = normalizeData(data);
     
-    // Tag data as historical
-    const taggedData = { ...data, _source: 'historical' as const };
+    console.log(`[HISTORICAL] Record #${historicalCountRef.current}:`, normalizedData.timestamp);
+    
+    const taggedData = { ...normalizedData, _source: 'historical' as const };
     
     setDataHistory(prev => {
       const newHistory = [...prev, taggedData];
       return newHistory;
     });
 
-    // Update current display to latest historical if no realtime yet
     if (realtimeCountRef.current === 0) {
       setSensorData(taggedData);
     }
-  }, []);
+  }, [normalizeData]);
 
-  const processRealtimeData = useCallback((data: SensorData) => {
+  const processRealtimeData = useCallback((data: Partial<SensorData>) => {
     realtimeCountRef.current++;
     const receiveTime = new Date();
     setLastUpdate(receiveTime);
     
-    // Tag data as realtime
-    const taggedData = { ...data, _source: 'realtime' as const };
+    const normalizedData = normalizeData(data);
+    const taggedData = { ...normalizedData, _source: 'realtime' as const };
     
     logSuccess('sensor', `📡 REALTIME #${realtimeCountRef.current} at ${receiveTime.toLocaleTimeString()}`, 
-      `Temp: ${data.temp}°C | Hum: ${data.hum}% | Gas: ${data.gas}ppm | Water: ${data.water}%`);
+      `Score: ${taggedData.environment_score} | Temp: ${taggedData.temp}°C | Hum: ${taggedData.hum}%`);
     
     console.log(`[REALTIME] Message #${realtimeCountRef.current}:`, {
-      timestamp: data.timestamp,
-      temp: data.temp,
-      hum: data.hum,
-      gas: data.gas,
-      water: data.water,
-      motion: data.motion,
-      system_health: data.system_health
+      timestamp: taggedData.timestamp,
+      environment_score: taggedData.environment_score,
+      temp: `${taggedData.temp}°C (${taggedData.temp_status}/${taggedData.temp_severity})`,
+      hum: `${taggedData.hum}% (${taggedData.hum_status}/${taggedData.hum_severity})`,
+      gas: `${taggedData.gas}ppm (${taggedData.air_quality}/${taggedData.air_severity})`,
+      alerts: taggedData.alerts.length,
+      recommendations: taggedData.recommendations.length,
+      automated_actions: taggedData.automated_actions.length,
+      system_health: taggedData.system_health,
     });
     
-    // Log status changes
-    if (data.system_health === 'critical') {
-      logError('sensor', '🚨 CRITICAL: System health is critical!', JSON.stringify(data.alerts));
-    } else if (data.system_health === 'attention') {
-      logWarning('sensor', '⚠️ System requires attention', JSON.stringify(data.alerts));
+    // Log based on backend-provided severity
+    if (taggedData.system_health === 'critical') {
+      logError('sensor', '🚨 CRITICAL: System health is critical!', `${taggedData.danger_count} critical issues`);
+    } else if (taggedData.needs_attention) {
+      logWarning('sensor', '⚠️ System requires attention', `${taggedData.warning_count} warnings`);
     }
     
-    // Log individual sensor alerts
-    if (data.temp_status === 'hot') {
-      logWarning('sensor', '🌡️ High temperature alert', `${data.temp}°C`);
+    // Log individual sensor alerts based on backend severity
+    if (taggedData.temp_severity === 'danger') {
+      logError('sensor', `🌡️ Temperature alert: ${taggedData.temp_status}`, `${taggedData.temp}°C`);
+    } else if (taggedData.temp_severity === 'warning') {
+      logWarning('sensor', `🌡️ Temperature warning: ${taggedData.temp_status}`, `${taggedData.temp}°C`);
     }
-    if (data.temp_status === 'cold') {
-      logInfo('sensor', '❄️ Low temperature detected', `${data.temp}°C`);
+    
+    if (taggedData.air_severity === 'danger') {
+      logError('sensor', `💨 Air quality alert: ${taggedData.air_quality}`, `${taggedData.gas}ppm`);
     }
-    if (data.air_quality === 'poor' || data.air_quality === 'hazardous') {
-      logError('sensor', '💨 Air quality alert', data.air_quality);
-    }
-    if (data.motion_status === 'detected') {
+    
+    if (taggedData.motion_severity !== 'normal') {
       logWarning('sensor', '🚶 Motion detected in greenhouse');
     }
-    if (data.gas_alarm_status !== 'clear') {
-      logError('sensor', '⚠️ Gas alarm triggered!', data.gas_alarm_status);
+    
+    if (taggedData.gas_alarm_severity === 'danger') {
+      logError('sensor', '⚠️ Gas alarm triggered!', taggedData.gas_alarm_status);
     }
     
-    // Update current sensor data
+    // Log recommendations if any
+    if (taggedData.recommendations.length > 0) {
+      logInfo('sensor', `💡 ${taggedData.recommendations.length} recommendation(s)`, taggedData.recommendations[0]);
+    }
+    
     setSensorData(taggedData);
     console.log('[STATE] sensorData updated with realtime data');
     
-    // Add to history
     setDataHistory(prev => {
-      const newHistory = [...prev, taggedData].slice(-100); // Keep last 100 records
+      const newHistory = [...prev, taggedData].slice(-100);
       console.log(`[STATE] dataHistory updated: ${newHistory.length} records`);
       return newHistory;
     });
-  }, []);
+  }, [normalizeData]);
 
   const processPing = useCallback((timestamp?: string) => {
     logInfo('websocket', '🏓 Ping received - connection alive', timestamp || '');
     console.log('[PING] Keep-alive received at:', timestamp);
-    // Don't update charts or data on ping - just log it
   }, []);
 
   const connect = useCallback(() => {
@@ -118,7 +148,6 @@ export function useWebSocket() {
     realtimeCountRef.current = 0;
     
     try {
-      // Check if we're on HTTPS and trying to connect to WS (insecure)
       if (window.location.protocol === 'https:' && WS_URL.startsWith('ws://')) {
         logError('websocket', 'SECURITY BLOCK: Cannot connect to ws:// from https:// page', 
           'Run locally on http:// or use wss:// endpoint');
@@ -159,7 +188,7 @@ export function useWebSocket() {
               break;
               
             case 'realtime':
-              setIsLoadingHistory(false); // Historical loading complete when realtime starts
+              setIsLoadingHistory(false);
               if (historicalCountRef.current > 0 && realtimeCountRef.current === 0) {
                 logSuccess('system', `📚 Historical data loaded: ${historicalCountRef.current} records`);
               }
@@ -171,7 +200,7 @@ export function useWebSocket() {
               break;
               
             case 'ping':
-              setIsLoadingHistory(false); // If we get ping, historical loading is done
+              setIsLoadingHistory(false);
               if (historicalCountRef.current > 0 && realtimeCountRef.current === 0) {
                 logSuccess('system', `📚 Historical data loaded: ${historicalCountRef.current} records`);
               }
@@ -179,11 +208,10 @@ export function useWebSocket() {
               break;
               
             default:
-              // Fallback: try to handle as direct sensor data (old format)
               logWarning('websocket', `Unknown message type: ${message.type}`, JSON.stringify(message));
               if ('temp' in message && 'hum' in message) {
                 logInfo('websocket', 'Detected legacy format, processing as realtime data');
-                processRealtimeData(message as unknown as SensorData);
+                processRealtimeData(message as unknown as Partial<SensorData>);
               }
           }
         } catch (error) {
@@ -199,7 +227,6 @@ export function useWebSocket() {
         setConnectionStatus('disconnected');
         setIsLoadingHistory(false);
         
-        // Auto-reconnect after 5 seconds
         logInfo('websocket', '🔄 Scheduling reconnection attempt in 5 seconds...');
         reconnectTimeoutRef.current = setTimeout(() => {
           logInfo('websocket', 'Attempting to reconnect...');

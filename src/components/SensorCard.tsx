@@ -1,17 +1,17 @@
 import { ReactNode } from 'react';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Severity } from '@/types/sensor';
 
 interface SensorCardProps {
   title: string;
   value: number | string;
   unit?: string;
   status: string;
-  statusType: 'good' | 'warning' | 'danger' | 'info';
+  severity: Severity;
   trend?: 'rising' | 'stable' | 'falling';
   icon: ReactNode;
   color: string;
-  description?: string;
 }
 
 export function SensorCard({
@@ -19,11 +19,10 @@ export function SensorCard({
   value,
   unit,
   status,
-  statusType,
+  severity,
   trend,
   icon,
   color,
-  description,
 }: SensorCardProps) {
   const getTrendIcon = () => {
     switch (trend) {
@@ -36,18 +35,23 @@ export function SensorCard({
     }
   };
 
+  // Use backend-provided severity directly
   const getStatusColor = () => {
-    switch (statusType) {
-      case 'good':
+    switch (severity) {
+      case 'normal':
         return 'bg-success';
+      case 'info':
+        return 'bg-info';
       case 'warning':
         return 'bg-warning';
       case 'danger':
         return 'bg-destructive';
       default:
-        return 'bg-info';
+        return 'bg-muted';
     }
   };
+
+  const isDanger = severity === 'danger';
 
   return (
     <div className="sensor-card group animate-fade-in">
@@ -91,15 +95,8 @@ export function SensorCard({
           )}
         </div>
 
-        {/* Description */}
-        {description && (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {description}
-          </p>
-        )}
-
-        {/* Warning indicator for danger status */}
-        {statusType === 'danger' && (
+        {/* Warning indicator for danger severity */}
+        {isDanger && (
           <div className="absolute top-3 right-3">
             <AlertTriangle className="w-5 h-5 text-destructive animate-pulse" />
           </div>

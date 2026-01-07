@@ -1,4 +1,4 @@
-import { SensorData } from '@/types/sensor';
+import { SensorData, Severity } from '@/types/sensor';
 import { 
   Table, 
   TableBody, 
@@ -26,27 +26,28 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'good':
+  // Use backend severity directly
+  const getSeverityColor = (severity: Severity) => {
+    switch (severity) {
       case 'normal':
-      case 'moist':
-      case 'clear':
-      case 'none':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'warm':
-      case 'humid':
-      case 'moderate':
-      case 'wet':
+      case 'info':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'warning':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'danger':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default:
+        return 'bg-muted text-muted-foreground border-muted';
+    }
+  };
+
+  const getHealthColor = (health: string) => {
+    switch (health) {
+      case 'good':
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'attention':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'hot':
-      case 'cold':
-      case 'dry':
-      case 'poor':
-      case 'hazardous':
-      case 'danger':
-      case 'detected':
       case 'critical':
         return 'bg-red-500/20 text-red-400 border-red-500/30';
       default:
@@ -84,9 +85,9 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                 <TableHead className="text-right">Temp</TableHead>
                 <TableHead className="text-right">Humidity</TableHead>
                 <TableHead className="text-right">Gas</TableHead>
-                <TableHead className="text-right">Soil</TableHead>
                 <TableHead className="text-center">Motion</TableHead>
                 <TableHead className="text-center">Gas Alarm</TableHead>
+                <TableHead className="text-center">Score</TableHead>
                 <TableHead className="text-center">Health</TableHead>
               </TableRow>
             </TableHeader>
@@ -122,7 +123,7 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                       <span className="font-medium">{data.temp}°C</span>
                       <Badge 
                         variant="outline" 
-                        className={cn("ml-2 text-[10px] px-1", getStatusColor(data.temp_status))}
+                        className={cn("ml-2 text-[10px] px-1", getSeverityColor(data.temp_severity))}
                       >
                         {data.temp_status}
                       </Badge>
@@ -131,7 +132,7 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                       <span className="font-medium">{data.hum}%</span>
                       <Badge 
                         variant="outline" 
-                        className={cn("ml-2 text-[10px] px-1", getStatusColor(data.hum_status))}
+                        className={cn("ml-2 text-[10px] px-1", getSeverityColor(data.hum_severity))}
                       >
                         {data.hum_status}
                       </Badge>
@@ -140,24 +141,15 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                       <span className="font-medium">{data.gas}</span>
                       <Badge 
                         variant="outline" 
-                        className={cn("ml-2 text-[10px] px-1", getStatusColor(data.air_quality))}
+                        className={cn("ml-2 text-[10px] px-1", getSeverityColor(data.air_severity))}
                       >
                         {data.air_quality}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="font-medium">{data.water}%</span>
-                      <Badge 
-                        variant="outline" 
-                        className={cn("ml-2 text-[10px] px-1", getStatusColor(data.soil_status))}
-                      >
-                        {data.soil_status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
                         variant="outline" 
-                        className={cn("text-[10px] px-1.5", getStatusColor(data.motion_status))}
+                        className={cn("text-[10px] px-1.5", getSeverityColor(data.motion_severity))}
                       >
                         {data.motion === 1 ? 'Yes' : 'No'}
                       </Badge>
@@ -165,15 +157,18 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                     <TableCell className="text-center">
                       <Badge 
                         variant="outline" 
-                        className={cn("text-[10px] px-1.5", getStatusColor(data.gas_alarm_status))}
+                        className={cn("text-[10px] px-1.5", getSeverityColor(data.gas_alarm_severity))}
                       >
                         {data.gasAlarm === 1 ? 'Active' : 'Clear'}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-center font-mono text-sm">
+                      {data.environment_score}
+                    </TableCell>
                     <TableCell className="text-center">
                       <Badge 
                         variant="outline" 
-                        className={cn("text-[10px] px-1.5", getStatusColor(data.system_health))}
+                        className={cn("text-[10px] px-1.5", getHealthColor(data.system_health))}
                       >
                         {data.system_health}
                       </Badge>
