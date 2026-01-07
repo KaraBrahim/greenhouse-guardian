@@ -7,6 +7,7 @@ import {
   PowerOff,
   Mail,
   Bell,
+  LampCeiling,
   Webhook,
   DoorOpen,
   Fan,
@@ -31,61 +32,7 @@ import { toast } from 'sonner';
 const API_BASE = 'http://18.212.77.216:8000';
 const DEVICE_ID = 'esp32_device';
 
-const defaultTriggers: Trigger[] = [
-  {
-    id: '1',
-    name: 'High Temperature Alert',
-    condition: { sensor: 'temp', operator: '>', value: 35 },
-    actions: [
-      { type: 'notification', config: { title: 'Temperature Warning', message: 'Greenhouse temperature exceeds 35°C' } },
-      { type: 'device_control', config: { device: 'ventilation_fan', action: 'turn_on' } },
-    ],
-    enabled: true,
-  },
-  {
-    id: '2',
-    name: 'Low Humidity Watering',
-    condition: { sensor: 'hum', operator: '<', value: 40 },
-    actions: [
-      { type: 'notification', config: { title: 'Low Humidity', message: 'Humidity below 40%' } },
-      { type: 'device_control', config: { device: 'sprinkler_system', action: 'activate' } },
-    ],
-    enabled: true,
-  },
-  {
-    id: '3',
-    name: 'Gas Leak Emergency',
-    condition: { sensor: 'gas', operator: '>', value: 500 },
-    actions: [
-      { type: 'alert', config: { severity: 'critical', message: 'Gas leak detected!' } },
-      { type: 'email', config: { recipient: 'admin@greenhouse.com', subject: 'EMERGENCY: Gas Leak' } },
-      { type: 'device_control', config: { device: 'emergency_ventilation', action: 'turn_on' } },
-      { type: 'device_control', config: { device: 'all_doors', action: 'unlock' } },
-    ],
-    enabled: true,
-  },
-  {
-    id: '4',
-    name: 'Motion Detection Security',
-    condition: { sensor: 'motion', operator: '=', value: 1 },
-    actions: [
-      { type: 'notification', config: { title: 'Motion Detected', message: 'Movement detected in greenhouse' } },
-      { type: 'webhook', config: { url: 'https://api.security.com/alert', method: 'POST' } },
-    ],
-    enabled: false,
-  },
-  {
-    id: '6',
-    name: 'Frost Protection',
-    condition: { sensor: 'temp', operator: '<', value: 5 },
-    actions: [
-      { type: 'alert', config: { severity: 'warning', message: 'Frost warning!' } },
-      { type: 'device_control', config: { device: 'heating_system', action: 'turn_on' } },
-      { type: 'device_control', config: { device: 'frost_blankets', action: 'deploy' } },
-    ],
-    enabled: true,
-  },
-];
+const defaultTriggers: Trigger[] = [];
 
 const sensorIcons: Record<string, React.ReactNode> = {
   temp: <Thermometer className="w-4 h-4" />,
@@ -107,7 +54,6 @@ const actionIcons: Record<string, React.ReactNode> = {
   alert: <AlertTriangle className="w-4 h-4" />,
   email: <Mail className="w-4 h-4" />,
   notification: <Bell className="w-4 h-4" />,
-  webhook: <Webhook className="w-4 h-4" />,
   device_control: <Zap className="w-4 h-4" />,
 };
 
@@ -115,15 +61,15 @@ export default function Triggers() {
   const [triggers, setTriggers] = useState<Trigger[]>(defaultTriggers);
   const [showNewTrigger, setShowNewTrigger] = useState(false);
 
-  const toggleTrigger = (id: string) => {
-    setTriggers(prev =>
-      prev.map(t => (t.id === id ? { ...t, enabled: !t.enabled } : t))
-    );
-  };
+  // const toggleTrigger = (id: string) => {
+  //   setTriggers(prev =>
+  //     prev.map(t => (t.id === id ? { ...t, enabled: !t.enabled } : t))
+  //   );
+  // };
 
-  const deleteTrigger = (id: string) => {
-    setTriggers(prev => prev.filter(t => t.id !== id));
-  };
+  // const deleteTrigger = (id: string) => {
+  //   setTriggers(prev => prev.filter(t => t.id !== id));
+  // };
 
   const getOperatorLabel = (op: string) => {
     switch (op) {
@@ -152,7 +98,6 @@ export default function Triggers() {
       case 'alert': return 'Show Alert';
       case 'email': return 'Send Email';
       case 'notification': return 'Push Notification';
-      case 'webhook': return 'Call Webhook';
       case 'device_control': return 'Control Device';
       default: return type;
     }
@@ -247,13 +192,6 @@ export default function Triggers() {
               Manual actuator controls and automated trigger responses
             </p>
           </div>
-          <Button 
-            onClick={() => setShowNewTrigger(true)}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Trigger
-          </Button>
         </div>
 
         {/* Actuator Controls Section */}
@@ -438,7 +376,7 @@ export default function Triggers() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="glass rounded-xl p-5">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-primary/10">
@@ -472,7 +410,7 @@ export default function Triggers() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Triggers List */}
         <div className="space-y-4">
@@ -528,7 +466,7 @@ export default function Triggers() {
                 </div>
 
                 {/* Controls */}
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <Switch
                     checked={trigger.enabled}
                     onCheckedChange={() => toggleTrigger(trigger.id)}
@@ -541,14 +479,14 @@ export default function Triggers() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
-                </div>
+                </div> */}
               </div>
             </div>
           ))}
         </div>
 
         {/* Empty State */}
-        {triggers.length === 0 && (
+        {/* {triggers.length === 0 && (
           <div className="glass rounded-xl p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Zap className="w-8 h-8 text-primary" />
@@ -562,19 +500,16 @@ export default function Triggers() {
               Create Trigger
             </Button>
           </div>
-        )}
+        )} */}
 
         {/* Action Types Reference */}
         <div className="mt-12">
           <h3 className="text-lg font-semibold mb-4">Available Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: <Bell />, title: 'Push Notification', desc: 'Send real-time notifications to your devices' },
               { icon: <Mail />, title: 'Email Alert', desc: 'Send email notifications to specified recipients' },
-              { icon: <Webhook />, title: 'Webhook', desc: 'Call external APIs for custom integrations' },
-              { icon: <DoorOpen />, title: 'Door Control', desc: 'Open or close greenhouse doors and vents' },
-              { icon: <Fan />, title: 'Ventilation', desc: 'Control fans and ventilation systems' },
-              { icon: <Droplets />, title: 'Irrigation', desc: 'Activate sprinklers and watering systems' },
+              { icon: <DoorOpen />, title: 'Door Control', desc: 'Open or close greenhouse doors and window' },
+              { icon: <LampCeiling />, title: 'Warning indicator', desc: 'Signals warnings and emergencies via dashboard colors and blinking LEDs.' },
             ].map((action, index) => (
               <div
                 key={index}
