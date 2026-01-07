@@ -1,5 +1,5 @@
 import { Alert } from '@/types/sensor';
-import { AlertTriangle, Info, AlertCircle, X } from 'lucide-react';
+import { AlertTriangle, Info, AlertCircle, X, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AlertsPanelProps {
@@ -9,7 +9,7 @@ interface AlertsPanelProps {
 export function AlertsPanel({ alerts }: AlertsPanelProps) {
   const getAlertIcon = (severity: Alert['severity']) => {
     switch (severity) {
-      case 'critical':
+      case 'danger':
         return <AlertCircle className="w-4 h-4" />;
       case 'warning':
         return <AlertTriangle className="w-4 h-4" />;
@@ -20,7 +20,7 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
 
   const getAlertStyles = (severity: Alert['severity']) => {
     switch (severity) {
-      case 'critical':
+      case 'danger':
         return 'bg-destructive/10 border-destructive/30 text-destructive';
       case 'warning':
         return 'bg-warning/10 border-warning/30 text-warning';
@@ -63,23 +63,28 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
           <div
             key={index}
             className={cn(
-              'flex items-start gap-3 p-3 rounded-lg border animate-scale-in',
+              'flex flex-col gap-2 p-3 rounded-lg border animate-scale-in',
               getAlertStyles(alert.severity)
             )}
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <div className="flex-shrink-0 mt-0.5">
-              {getAlertIcon(alert.severity)}
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                {getAlertIcon(alert.severity)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium capitalize">
+                  {alert.type.replace(/_/g, ' ')}
+                </p>
+                <p className="text-xs opacity-80 mt-0.5">{alert.message}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium capitalize">
-                {alert.type.replace(/_/g, ' ')}
-              </p>
-              <p className="text-xs opacity-80 mt-0.5">{alert.message}</p>
-            </div>
-            <button className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity">
-              <X className="w-4 h-4" />
-            </button>
+            {alert.action && (
+              <div className="flex items-center gap-1 text-xs opacity-70 pl-7">
+                <ArrowRight className="w-3 h-3" />
+                <span>{alert.action}</span>
+              </div>
+            )}
           </div>
         ))}
       </div>

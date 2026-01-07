@@ -15,7 +15,6 @@ import {
   Wind,
   Activity,
   AlertTriangle,
-  Leaf,
   Save,
   X
 } from 'lucide-react';
@@ -68,16 +67,6 @@ const defaultTriggers: Trigger[] = [
     enabled: false,
   },
   {
-    id: '5',
-    name: 'Dry Soil Warning',
-    condition: { sensor: 'water', operator: '<', value: 30 },
-    actions: [
-      { type: 'notification', config: { title: 'Soil Dry', message: 'Soil moisture critically low' } },
-      { type: 'email', config: { recipient: 'gardener@greenhouse.com', subject: 'Watering Required' } },
-    ],
-    enabled: true,
-  },
-  {
     id: '6',
     name: 'Frost Protection',
     condition: { sensor: 'temp', operator: '<', value: 5 },
@@ -94,7 +83,6 @@ const sensorIcons: Record<string, React.ReactNode> = {
   temp: <Thermometer className="w-4 h-4" />,
   hum: <Droplets className="w-4 h-4" />,
   gas: <Wind className="w-4 h-4" />,
-  water: <Leaf className="w-4 h-4" />,
   motion: <Activity className="w-4 h-4" />,
   gasAlarm: <AlertTriangle className="w-4 h-4" />,
 };
@@ -103,7 +91,6 @@ const sensorColors: Record<string, string> = {
   temp: 'hsl(15, 90%, 55%)',
   hum: 'hsl(199, 89%, 48%)',
   gas: 'hsl(270, 70%, 60%)',
-  water: 'hsl(142, 76%, 45%)',
   motion: 'hsl(38, 92%, 50%)',
   gasAlarm: 'hsl(0, 72%, 51%)',
 };
@@ -146,7 +133,6 @@ export default function Triggers() {
       case 'temp': return 'Temperature';
       case 'hum': return 'Humidity';
       case 'gas': return 'Gas Level';
-      case 'water': return 'Soil Moisture';
       case 'motion': return 'Motion';
       case 'gasAlarm': return 'Gas Alarm';
       default: return sensor;

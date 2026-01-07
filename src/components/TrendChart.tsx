@@ -1,9 +1,9 @@
 import { SensorData } from '@/types/sensor';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface TrendChartProps {
   data: SensorData[];
-  dataKey: keyof Pick<SensorData, 'temp' | 'hum' | 'gas' | 'water'>;
+  dataKey: 'temp' | 'hum' | 'gas';
   color: string;
   title: string;
 }
