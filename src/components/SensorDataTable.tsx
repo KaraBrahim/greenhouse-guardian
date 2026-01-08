@@ -87,6 +87,7 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                 <TableHead className="text-right">Gas</TableHead>
                 <TableHead className="text-center">Motion</TableHead>
                 <TableHead className="text-center">Gas Alarm</TableHead>
+                <TableHead className="text-center">Water</TableHead>
                 <TableHead className="text-center">Score</TableHead>
                 <TableHead className="text-center">Health</TableHead>
               </TableRow>
@@ -94,7 +95,7 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
             <TableBody>
               {reversedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     Waiting for sensor data...
                   </TableCell>
                 </TableRow>
@@ -160,6 +161,14 @@ export function SensorDataTable({ dataHistory }: SensorDataTableProps) {
                         className={cn("text-[10px] px-1.5", getSeverityColor(data.gas_alarm_severity))}
                       >
                         {data.gasAlarm === 1 ? 'Active' : 'Clear'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge 
+                        variant="outline" 
+                        className={cn("text-[10px] px-1.5", getSeverityColor(data.water_severity))}
+                      >
+                        {data.water === 1 ? 'Detected' : 'Not Detected'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center font-mono text-sm">

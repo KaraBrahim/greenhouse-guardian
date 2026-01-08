@@ -16,19 +16,24 @@ export function EnvironmentScore({
   needsAttention,
   healthColor 
 }: EnvironmentScoreProps) {
+  const hasData = score > 0 || dangerCount > 0 || warningCount > 0;
+
   const getScoreColor = () => {
+    if (!hasData) return 'text-muted-foreground';
     if (score >= 80) return 'text-success';
     if (score >= 60) return 'text-warning';
     return 'text-destructive';
   };
 
   const getScoreGradient = () => {
+    if (!hasData) return 'from-muted/20 to-muted/5';
     if (score >= 80) return 'from-success/20 to-success/5';
     if (score >= 60) return 'from-warning/20 to-warning/5';
     return 'from-destructive/20 to-destructive/5';
   };
 
   const getScoreLabel = () => {
+    if (!hasData) return 'No Data';
     if (score >= 90) return 'Excellent';
     if (score >= 80) return 'Good';
     if (score >= 70) return 'Fair';
@@ -60,9 +65,9 @@ export function EnvironmentScore({
             "text-6xl font-bold tracking-tight",
             getScoreColor()
           )}>
-            {score}
+            {hasData ? score : '--'}
           </div>
-          <span className="text-lg text-muted-foreground">/100</span>
+          <span className="text-lg text-muted-foreground">{hasData ? '/100' : ''}</span>
         </div>
         <div className="flex-1">
           <p className={cn("text-xl font-medium mb-1", getScoreColor())}>
