@@ -25,6 +25,7 @@ export interface SensorData {
   gas: number;
   motion: number;
   gasAlarm: number;
+  water: number;
   button?: number;
   pot?: number;
   
@@ -39,6 +40,8 @@ export interface SensorData {
   motion_severity: Severity;
   gas_alarm_status: string;
   gas_alarm_severity: Severity;
+  water_status: string;
+  water_severity: Severity;
   button_status?: string;
   pot_interval?: number;
   
@@ -88,6 +91,7 @@ export const defaultSensorData: SensorData = {
   gas: 0,
   motion: 0,
   gasAlarm: 0,
+  water: 0,
   temp_status: 'cold',
   temp_severity: 'normal',
   hum_status: 'dry',
@@ -96,6 +100,8 @@ export const defaultSensorData: SensorData = {
   air_severity: 'normal',
   gas_alarm_status: 'clear',
   gas_alarm_severity: 'normal',
+  water_status: 'not detected',
+  water_severity: 'normal',
   motion_status: 'none',
   motion_severity: 'normal',
   alerts: [],
