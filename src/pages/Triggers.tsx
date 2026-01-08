@@ -343,7 +343,7 @@ export default function Triggers() {
                   {loadingActuator === 'led' && ledState !== 'off' ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                   Off
                 </Button>
-                <Button 
+                {/* <Button 
                   variant={ledState === 'on' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => controlLED('on')}
@@ -351,15 +351,15 @@ export default function Triggers() {
                   className={ledState === 'on' ? 'bg-red-500 hover:bg-red-600' : ''}
                 >
                   On
-                </Button>
+                </Button> */}
                 <Button 
                   variant={ledState === 'blink_slow' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => controlLED('blink_slow')}
                   disabled={loadingActuator === 'led'}
-                  className={ledState === 'blink_slow' ? 'bg-red-500 hover:bg-red-600' : ''}
+                  className={ledState === 'blink_slow' ? 'bg-orange-500 hover:bg-orange-600' : ''}
                 >
-                  Slow Blink
+                  Warning
                 </Button>
                 <Button 
                   variant={ledState === 'blink_fast' ? 'default' : 'outline'}
@@ -368,7 +368,7 @@ export default function Triggers() {
                   disabled={loadingActuator === 'led'}
                   className={ledState === 'blink_fast' ? 'bg-red-500 hover:bg-red-600' : ''}
                 >
-                  Fast Blink
+                  Error
                 </Button>
               </div>
             </div>
