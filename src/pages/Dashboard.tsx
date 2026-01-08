@@ -14,6 +14,7 @@ import {
   Wind, 
   Activity, 
   AlertTriangle,
+  Waves,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { logInfo, logSuccess } from '@/types/logs';
@@ -72,7 +73,7 @@ export default function Dashboard() {
         </div>
 
         {/* Sensor Grid - Using backend-provided severity */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
           <SensorCard
             title="Temperature"
             value={sensorData.temp}
@@ -102,6 +103,15 @@ export default function Dashboard() {
             severity={sensorData.air_severity}
             icon={<Wind className="w-5 h-5" />}
             color="hsl(270, 70%, 60%)"
+          />
+
+          <SensorCard
+            title="Water"
+            value={sensorData.water === 1 ? 'Detected' : 'Not Detected'}
+            status={sensorData.water_status}
+            severity={sensorData.water_severity}
+            icon={<Waves className="w-5 h-5" />}
+            color="hsl(190, 90%, 50%)"
           />
 
           <SensorCard
